@@ -36,6 +36,8 @@
     "@bufbuild/protobuf": "^2.1.0",
     "@meshtastic/protobufs": "npm:@jsr/meshtastic__protobufs@^2.5.7",
     "crc": "^4.3.2",
+    "serialport": "^12.0.0",
+    "@serialport/bindings-interface": "^1.2.2",
     "ste-simple-events": "^3.0.11",
     "tslog": "^4.9.3"
   },

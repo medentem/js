@@ -59,6 +59,12 @@ export interface SerialConnectionParameters {
   concurrentLogOutput: boolean;
 }
 
+export interface ElectronSerialConnectionParameters {
+  baudRate?: number;
+  path: string;
+  concurrentLogOutput: boolean;
+}
+
 export type LogEventPacket = LogEvent & { date: Date };
 
 export type PacketDestination = "broadcast" | "direct";
@@ -139,7 +145,7 @@ export enum ChannelNumber {
 
 export type ConnectionType = BleConnection | HttpConnection | SerialConnection;
 
-export type ConnectionTypeName = "ble" | "http" | "serial";
+export type ConnectionTypeName = "ble" | "http" | "serial" | "electron-serial";
 
 export type Destination = number | "self" | "broadcast";
 
