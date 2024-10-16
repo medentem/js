@@ -212,13 +212,13 @@ export class ElectronSerialConnection extends MeshDevice {
     writer: WritableStreamDefaultWriter<Uint8Array> | undefined,
   ): Promise<void> {
     if (writer) {
-      writer.write(data);
-    } else {
-      this.log.error(
-        Types.Emitter[Types.Emitter.Connect],
-        "❌ No writer available.",
-      );
+      await writer.write(data);
+      return;
     }
+    this.log.error(
+      Types.Emitter[Types.Emitter.Connect],
+      "❌ No writer available.",
+    );
   }
 
   /** Reconnects to the serial port */

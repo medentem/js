@@ -2389,13 +2389,13 @@ var ElectronSerialConnection = class extends MeshDevice {
   }
   async processDataStream(data, writer) {
     if (writer) {
-      writer.write(data);
-    } else {
-      this.log.error(
-        Emitter[20 /* Connect */],
-        "\u274C No writer available."
-      );
+      await writer.write(data);
+      return;
     }
+    this.log.error(
+      Emitter[20 /* Connect */],
+      "\u274C No writer available."
+    );
   }
   /** Reconnects to the serial port */
   async reconnect() {
