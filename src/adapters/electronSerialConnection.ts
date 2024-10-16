@@ -98,7 +98,7 @@ export class ElectronSerialConnection extends MeshDevice {
         parser.on("data", (data) => {
           this.log.info(
             Types.Emitter[Types.Emitter.ReadFromRadio],
-            `🔷 Packet found ${data}`,
+            `🔷 Data received ${data}`,
           );
           const packet = this.packetExtractor.tryExtractPacket(
             data,
@@ -107,6 +107,10 @@ export class ElectronSerialConnection extends MeshDevice {
             false,
           );
           if (packet) {
+            this.log.info(
+              Types.Emitter[Types.Emitter.ReadFromRadio],
+              `🔷 Packet extracted ${packet}`,
+            );
             this.handleFromRadio(packet);
           }
         });
