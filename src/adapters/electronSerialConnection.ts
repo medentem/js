@@ -1,6 +1,7 @@
 import { MeshDevice } from "../meshDevice.ts";
 import * as Types from "../types.ts";
 import { PacketLengthParser, SerialPort } from "serialport";
+import { extractPacket } from "../utils/packetExtractor.ts";
 
 export interface PortInfo {
   path: string;
@@ -103,7 +104,15 @@ export class ElectronSerialConnection extends MeshDevice {
             Types.Emitter[Types.Emitter.ReadFromRadio],
             `🔷 Packet found ${data}`,
           );
-          this.handleFromRadio(data);
+          const packet = extractPacket(
+            data,
+            this.log,
+            this.events.onDeviceDebugLog,
+            false,
+          );
+          if (packet) {
+            this.handleFromRadio(packet);
+          }
         });
 
         this.log.info(

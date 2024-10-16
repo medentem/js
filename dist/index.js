@@ -481,59 +481,73 @@ var Queue = class {
   }
 };
 
-// src/utils/transformHandler.ts
+// src/utils/packetExtractor.ts
 import * as Protobuf2 from "@meshtastic/protobufs";
-var transformHandler = (log, onReleaseEvent, onDeviceDebugLog, concurrentLogOutput) => {
+var extractPacket = (chunk, log, onDeviceDebugLog, concurrentLogOutput) => {
   let byteBuffer = new Uint8Array([]);
+  byteBuffer = new Uint8Array([...byteBuffer, ...chunk]);
+  let processingExhausted = false;
+  while (byteBuffer.length !== 0 && !processingExhausted) {
+    const framingIndex = byteBuffer.findIndex((byte) => byte === 148);
+    const framingByte2 = byteBuffer[framingIndex + 1];
+    if (framingByte2 === 195) {
+      if (byteBuffer.subarray(0, framingIndex).length) {
+        if (concurrentLogOutput) {
+          onDeviceDebugLog.dispatch(byteBuffer.subarray(0, framingIndex));
+        } else {
+          log.warn(
+            2 /* SerialConnection */,
+            20 /* Connect */,
+            `\u26A0\uFE0F Found unneccesary message padding, removing: ${byteBuffer.subarray(0, framingIndex).toString()}`
+          );
+        }
+        byteBuffer = byteBuffer.subarray(framingIndex);
+      }
+      const msb = byteBuffer[2];
+      const lsb = byteBuffer[3];
+      if (msb !== void 0 && lsb !== void 0 && byteBuffer.length >= 4 + (msb << 8) + lsb) {
+        const packet = byteBuffer.subarray(4, 4 + (msb << 8) + lsb);
+        const malformedDetectorIndex = packet.findIndex(
+          (byte) => byte === 148
+        );
+        if (malformedDetectorIndex !== -1 && packet[malformedDetectorIndex + 1] === 195) {
+          log.warn(
+            2 /* SerialConnection */,
+            20 /* Connect */,
+            `\u26A0\uFE0F Malformed packet found, discarding: ${byteBuffer.subarray(0, malformedDetectorIndex - 1).toString()}`,
+            Protobuf2.Mesh.LogRecord_Level.WARNING
+          );
+          byteBuffer = byteBuffer.subarray(malformedDetectorIndex);
+        } else {
+          byteBuffer = byteBuffer.subarray(3 + (msb << 8) + lsb + 1);
+          return packet;
+        }
+      } else {
+        processingExhausted = true;
+      }
+    } else {
+      processingExhausted = true;
+    }
+  }
+  return void 0;
+};
+
+// src/utils/transformHandler.ts
+var transformHandler = (log, onReleaseEvent, onDeviceDebugLog, concurrentLogOutput) => {
   return new TransformStream({
     transform(chunk, controller) {
       log = log.getSubLogger({ name: "streamTransformer" });
       onReleaseEvent.subscribe(() => {
         controller.terminate();
       });
-      byteBuffer = new Uint8Array([...byteBuffer, ...chunk]);
-      let processingExhausted = false;
-      while (byteBuffer.length !== 0 && !processingExhausted) {
-        const framingIndex = byteBuffer.findIndex((byte) => byte === 148);
-        const framingByte2 = byteBuffer[framingIndex + 1];
-        if (framingByte2 === 195) {
-          if (byteBuffer.subarray(0, framingIndex).length) {
-            if (concurrentLogOutput) {
-              onDeviceDebugLog.dispatch(byteBuffer.subarray(0, framingIndex));
-            } else {
-              log.warn(
-                2 /* SerialConnection */,
-                20 /* Connect */,
-                `\u26A0\uFE0F Found unneccesary message padding, removing: ${byteBuffer.subarray(0, framingIndex).toString()}`
-              );
-            }
-            byteBuffer = byteBuffer.subarray(framingIndex);
-          }
-          const msb = byteBuffer[2];
-          const lsb = byteBuffer[3];
-          if (msb !== void 0 && lsb !== void 0 && byteBuffer.length >= 4 + (msb << 8) + lsb) {
-            const packet = byteBuffer.subarray(4, 4 + (msb << 8) + lsb);
-            const malformedDetectorIndex = packet.findIndex(
-              (byte) => byte === 148
-            );
-            if (malformedDetectorIndex !== -1 && packet[malformedDetectorIndex + 1] === 195) {
-              log.warn(
-                2 /* SerialConnection */,
-                20 /* Connect */,
-                `\u26A0\uFE0F Malformed packet found, discarding: ${byteBuffer.subarray(0, malformedDetectorIndex - 1).toString()}`,
-                Protobuf2.Mesh.LogRecord_Level.WARNING
-              );
-              byteBuffer = byteBuffer.subarray(malformedDetectorIndex);
-            } else {
-              byteBuffer = byteBuffer.subarray(3 + (msb << 8) + lsb + 1);
-              controller.enqueue(packet);
-            }
-          } else {
-            processingExhausted = true;
-          }
-        } else {
-          processingExhausted = true;
-        }
+      const packet = extractPacket(
+        chunk,
+        log,
+        onDeviceDebugLog,
+        concurrentLogOutput
+      );
+      if (packet) {
+        controller.enqueue(packet);
       }
     }
   });
@@ -2306,7 +2320,15 @@ var ElectronSerialConnection = class extends MeshDevice {
             Emitter[22 /* ReadFromRadio */],
             `\u{1F537} Packet found ${data}`
           );
-          this.handleFromRadio(data);
+          const packet = extractPacket(
+            data,
+            this.log,
+            this.events.onDeviceDebugLog,
+            false
+          );
+          if (packet) {
+            this.handleFromRadio(packet);
+          }
         });
         this.log.info(
           Emitter[20 /* Connect */],
