@@ -12,9 +12,6 @@ pids
 # Typedoc files
 docs
 
-# Build output
-dist
-
 # Node Modules
 node_modules
 
