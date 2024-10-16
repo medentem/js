@@ -103,10 +103,6 @@ export class ElectronSerialConnection extends MeshDevice {
             false,
           );
           if (packet) {
-            this.log.info(
-              Types.Emitter[Types.Emitter.ReadFromRadio],
-              `🔷 Packet extracted ${packet}`,
-            );
             this.handleFromRadio(packet);
           }
         });
