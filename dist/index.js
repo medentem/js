@@ -2258,7 +2258,7 @@ var SerialConnection = class extends MeshDevice {
 };
 
 // src/adapters/electronSerialConnection.ts
-import { PacketLengthParser, SerialPort } from "serialport";
+import { ByteLengthParser, SerialPort } from "serialport";
 var ElectronSerialConnection = class extends MeshDevice {
   /** Defines the connection type as serial */
   connType;
@@ -2319,14 +2319,7 @@ var ElectronSerialConnection = class extends MeshDevice {
         return;
       }
       if (this.port?.readable) {
-        const parser = this.port.pipe(
-          new PacketLengthParser({
-            delimiter: 148,
-            packetOverhead: 4,
-            lengthBytes: 1,
-            lengthOffset: 3
-          })
-        );
+        const parser = this.port.pipe(new ByteLengthParser({ length: 8 }));
         parser.on("data", (data) => {
           this.log.info(
             Emitter[22 /* ReadFromRadio */],

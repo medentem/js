@@ -1,6 +1,6 @@
 import { MeshDevice } from "../meshDevice.ts";
 import * as Types from "../types.ts";
-import { PacketLengthParser, SerialPort } from "serialport";
+import { ByteLengthParser, SerialPort } from "serialport";
 import { PacketExtractor } from "../utils/packetExtractor.ts";
 
 export interface PortInfo {
@@ -93,14 +93,7 @@ export class ElectronSerialConnection extends MeshDevice {
       }
 
       if (this.port?.readable) {
-        const parser = this.port.pipe(
-          new PacketLengthParser({
-            delimiter: 0x94,
-            packetOverhead: 4,
-            lengthBytes: 1,
-            lengthOffset: 3,
-          }),
-        );
+        const parser = this.port.pipe(new ByteLengthParser({ length: 8 }));
 
         parser.on("data", (data) => {
           this.log.info(
