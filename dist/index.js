@@ -2234,72 +2234,23 @@ var SerialConnection = class extends MeshDevice {
 };
 
 // src/adapters/electronSerialConnection.ts
-import { SimpleEventDispatcher as SimpleEventDispatcher4 } from "ste-simple-events";
-import { ByteLengthParser, SerialPort } from "serialport";
+import { PacketLengthParser, SerialPort } from "serialport";
 var ElectronSerialConnection = class extends MeshDevice {
   /** Defines the connection type as serial */
   connType;
   portId;
   /** Serial port used to communicate with device. */
   port;
-  readerHack;
-  writerHack;
-  /** Transform stream for parsing raw serial data */
-  transformer;
-  /** Should locks be prevented */
-  preventLock;
-  /** Unfortunately, this is currently the only way to release the lock on a stream after piping it
-   *  through a transform stream (https://stackoverflow.com/questions/71262432) */
-  pipePromise;
-  /**
-   * Fires when `disconnect()` is called, used to instruct serial port and
-   * readers to release there locks
-   *
-   * @event onReleaseEvent
-   */
-  onReleaseEvent;
   constructor(configId) {
     super(configId);
     this.log = this.log.getSubLogger({ name: "ElectronSerialConnection" });
     this.connType = "electron-serial";
     this.portId = "";
     this.port = void 0;
-    this.transformer = void 0;
-    this.onReleaseEvent = new SimpleEventDispatcher4();
-    this.preventLock = false;
     this.log.debug(
       Emitter[0 /* Constructor */],
       "\u{1F537} ElectronSerialConnection instantiated"
     );
-  }
-  /**
-   * Reads packets from transformed serial port steam and processes them.
-   */
-  async readFromRadio(reader) {
-    this.onReleaseEvent.subscribe(async () => {
-      this.preventLock = true;
-      await reader.cancel();
-      await this.pipePromise?.catch(() => {
-      });
-      reader.releaseLock();
-      await this.port?.close();
-    });
-    while (!this.preventLock) {
-      await reader.read().then(({ value }) => {
-        if (value) {
-          this.log.info(
-            Emitter[22 /* ReadFromRadio */],
-            `\u{1F537} ${value}`
-          );
-          this.handleFromRadio(value);
-        }
-      }).catch(() => {
-        this.log.debug(
-          Emitter[22 /* ReadFromRadio */],
-          "Releasing reader"
-        );
-      });
-    }
   }
   /** Gets list of serial ports that can be passed to `connect` */
   async getPorts() {
@@ -2313,8 +2264,7 @@ var ElectronSerialConnection = class extends MeshDevice {
    */
   async connect({
     path,
-    baudRate = 115200,
-    concurrentLogOutput = false
+    baudRate = 115200
   }) {
     this.updateDeviceStatus(3 /* DeviceConnecting */);
     this.portId = path;
@@ -2343,19 +2293,17 @@ var ElectronSerialConnection = class extends MeshDevice {
         return;
       }
       if (this.port?.readable) {
-        const parser = this.port.pipe(new ByteLengthParser({ length: 64 }));
-        this.transformer = transformHandler(
-          this.log,
-          this.onReleaseEvent,
-          this.events.onDeviceDebugLog,
-          concurrentLogOutput
+        const parser = this.port.pipe(
+          new PacketLengthParser({
+            delimiter: 148,
+            packetOverhead: 4,
+            lengthBytes: 1,
+            lengthOffset: 3
+          })
         );
-        const writer = this.writerHack = this.transformer?.writable.getWriter();
-        const reader = this.readerHack = this.transformer.readable.getReader();
         parser.on("data", (data) => {
-          this.processDataStream(data, writer);
+          this.handleFromRadio(data);
         });
-        this.readFromRadio(reader);
         this.log.info(
           Emitter[20 /* Connect */],
           `\u{1F537} Connected to ${path}`
@@ -2368,7 +2316,6 @@ var ElectronSerialConnection = class extends MeshDevice {
         );
       }
     });
-    this.preventLock = false;
     this.port.open((err) => {
       if (err) {
         this.log.error(
@@ -2383,16 +2330,6 @@ var ElectronSerialConnection = class extends MeshDevice {
       }
     });
   }
-  async processDataStream(data, writer) {
-    if (writer) {
-      await writer.write(data);
-      return;
-    }
-    this.log.error(
-      Emitter[20 /* Connect */],
-      "\u274C No writer available."
-    );
-  }
   /** Reconnects to the serial port */
   async reconnect() {
     await this.connect({
@@ -2402,15 +2339,7 @@ var ElectronSerialConnection = class extends MeshDevice {
   }
   /** Disconnects from the serial port */
   async disconnect() {
-    this.preventLock = true;
-    await this.readerHack?.cancel();
-    await this.writerHack?.abort();
-    await this.pipePromise?.catch(() => {
-    });
-    this.readerHack?.releaseLock();
-    if (this.port?.readable) {
-      await this.port?.close();
-    }
+    this.port?.close();
     this.updateDeviceStatus(2 /* DeviceDisconnected */);
     this.complete();
     return this.port;

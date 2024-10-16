@@ -770,35 +770,14 @@ declare class ElectronSerialConnection extends MeshDevice {
     protected portId: string;
     /** Serial port used to communicate with device. */
     port: SerialPort$1 | undefined;
-    private readerHack;
-    private writerHack;
-    /** Transform stream for parsing raw serial data */
-    private transformer?;
-    /** Should locks be prevented */
-    private preventLock?;
-    /** Unfortunately, this is currently the only way to release the lock on a stream after piping it
-     *  through a transform stream (https://stackoverflow.com/questions/71262432) */
-    private pipePromise?;
-    /**
-     * Fires when `disconnect()` is called, used to instruct serial port and
-     * readers to release there locks
-     *
-     * @event onReleaseEvent
-     */
-    private readonly onReleaseEvent;
     constructor(configId?: number);
-    /**
-     * Reads packets from transformed serial port steam and processes them.
-     */
-    private readFromRadio;
     /** Gets list of serial ports that can be passed to `connect` */
     getPorts(): Promise<PortInfo[]>;
     getCurrentPort(): SerialPort$1<_serialport_bindings_cpp.AutoDetectTypes> | undefined;
     /**
      * Initiates the connect process to a Meshtastic device via Serial Port
      */
-    connect({ path, baudRate, concurrentLogOutput, }: ElectronSerialConnectionParameters): Promise<void>;
-    processDataStream(data: any, writer: WritableStreamDefaultWriter<Uint8Array> | undefined): Promise<void>;
+    connect({ path, baudRate, }: ElectronSerialConnectionParameters): Promise<void>;
     /** Reconnects to the serial port */
     reconnect(): Promise<void>;
     /** Disconnects from the serial port */
