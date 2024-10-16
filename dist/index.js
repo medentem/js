@@ -2321,10 +2321,6 @@ var ElectronSerialConnection = class extends MeshDevice {
       if (this.port?.readable) {
         const parser = this.port.pipe(new ByteLengthParser({ length: 8 }));
         parser.on("data", (data) => {
-          this.log.info(
-            Emitter[22 /* ReadFromRadio */],
-            `\u{1F537} Data received ${data}`
-          );
           const packet = this.packetExtractor.tryExtractPacket(
             data,
             this.log,
