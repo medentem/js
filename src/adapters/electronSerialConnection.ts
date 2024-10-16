@@ -182,7 +182,19 @@ export class ElectronSerialConnection extends MeshDevice {
     this.preventLock = false;
 
     /** Connect to device */
-    await this.port.open();
+    this.port.open((err) => {
+      if (err) {
+        this.log.error(
+          Types.Emitter[Types.Emitter.Connect],
+          "❌ Serial port failed to open.",
+        );
+      } else {
+        this.log.info(
+          Types.Emitter[Types.Emitter.Connect],
+          `🔷 Port open to ${path}`,
+        );
+      }
+    });
   }
 
   public async processDataStream(
