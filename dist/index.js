@@ -2347,7 +2347,7 @@ var ElectronSerialConnection = class extends MeshDevice {
         return;
       }
       if (this.port?.readable) {
-        const parser = this.port.pipe(new ByteLengthParser({ length: 8 }));
+        const parser = this.port.pipe(new ByteLengthParser({ length: 64 }));
         this.transformer = transformHandler(
           this.log,
           this.onReleaseEvent,
