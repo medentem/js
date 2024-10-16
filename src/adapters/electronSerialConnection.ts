@@ -170,9 +170,8 @@ export class ElectronSerialConnection extends MeshDevice {
 
         parser.on("data", (data) => {
           this.processDataStream(data, writer);
+          this.readFromRadio(reader);
         });
-
-        this.readFromRadio(reader);
 
         this.log.info(
           Types.Emitter[Types.Emitter.Connect],

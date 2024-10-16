@@ -2357,8 +2357,8 @@ var ElectronSerialConnection = class extends MeshDevice {
         const reader = this.readerHack = this.transformer.readable.getReader();
         parser.on("data", (data) => {
           this.processDataStream(data, writer);
+          this.readFromRadio(reader);
         });
-        this.readFromRadio(reader);
         this.log.info(
           Emitter[20 /* Connect */],
           `\u{1F537} Connected to ${path}`
