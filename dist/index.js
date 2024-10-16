@@ -2302,6 +2302,10 @@ var ElectronSerialConnection = class extends MeshDevice {
           })
         );
         parser.on("data", (data) => {
+          this.log.info(
+            Emitter[22 /* ReadFromRadio */],
+            `\u{1F537} Packet found ${data}`
+          );
           this.handleFromRadio(data);
         });
         this.log.info(

@@ -99,6 +99,10 @@ export class ElectronSerialConnection extends MeshDevice {
         );
 
         parser.on("data", (data) => {
+          this.log.info(
+            Types.Emitter[Types.Emitter.ReadFromRadio],
+            `🔷 Packet found ${data}`,
+          );
           this.handleFromRadio(data);
         });
 
