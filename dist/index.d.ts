@@ -771,6 +771,7 @@ declare class ElectronSerialConnection extends MeshDevice {
     /** Serial port used to communicate with device. */
     port: SerialPort$1 | undefined;
     private readerHack;
+    private writerHack;
     /** Transform stream for parsing raw serial data */
     private transformer?;
     /** Should locks be prevented */

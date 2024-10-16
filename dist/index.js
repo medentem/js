@@ -2243,6 +2243,7 @@ var ElectronSerialConnection = class extends MeshDevice {
   /** Serial port used to communicate with device. */
   port;
   readerHack;
+  writerHack;
   /** Transform stream for parsing raw serial data */
   transformer;
   /** Should locks be prevented */
@@ -2353,12 +2354,12 @@ var ElectronSerialConnection = class extends MeshDevice {
           this.events.onDeviceDebugLog,
           concurrentLogOutput
         );
-        const writer = this.transformer?.writable.getWriter();
+        const writer = this.writerHack = this.transformer?.writable.getWriter();
         const reader = this.readerHack = this.transformer.readable.getReader();
         parser.on("data", (data) => {
           this.processDataStream(data, writer);
-          this.readFromRadio(reader);
         });
+        this.readFromRadio(reader);
         this.log.info(
           Emitter[20 /* Connect */],
           `\u{1F537} Connected to ${path}`
@@ -2407,6 +2408,7 @@ var ElectronSerialConnection = class extends MeshDevice {
   async disconnect() {
     this.preventLock = true;
     await this.readerHack?.cancel();
+    await this.writerHack?.abort();
     await this.pipePromise?.catch(() => {
     });
     this.readerHack?.releaseLock();

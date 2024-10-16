@@ -25,6 +25,7 @@ export class ElectronSerialConnection extends MeshDevice {
   public port: SerialPort | undefined;
 
   private readerHack: ReadableStreamDefaultReader<Uint8Array> | undefined;
+  private writerHack: WritableStreamDefaultWriter<Uint8Array> | undefined;
 
   /** Transform stream for parsing raw serial data */
   private transformer?: TransformStream<Uint8Array, Uint8Array>;
@@ -164,14 +165,15 @@ export class ElectronSerialConnection extends MeshDevice {
           concurrentLogOutput,
         );
 
-        const writer = this.transformer?.writable.getWriter();
+        const writer = (this.writerHack =
+          this.transformer?.writable.getWriter());
         const reader = (this.readerHack =
           this.transformer.readable.getReader());
 
         parser.on("data", (data) => {
           this.processDataStream(data, writer);
-          this.readFromRadio(reader);
         });
+        this.readFromRadio(reader);
 
         this.log.info(
           Types.Emitter[Types.Emitter.Connect],
@@ -234,6 +236,7 @@ export class ElectronSerialConnection extends MeshDevice {
     // -- This should be used as an event, like intened
     this.preventLock = true;
     await this.readerHack?.cancel();
+    await this.writerHack?.abort();
     await this.pipePromise?.catch(() => {});
     this.readerHack?.releaseLock();
     if (this.port?.readable) {
