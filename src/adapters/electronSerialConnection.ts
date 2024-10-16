@@ -76,11 +76,20 @@ export class ElectronSerialConnection extends MeshDevice {
       await this.port?.close();
     });
 
+    this.log.info(
+      Types.Emitter[Types.Emitter.ReadFromRadio],
+      `🔷 Readable? ${this.port?.readable}`,
+    );
+
     while (this.port?.readable && !this.preventLock) {
       await reader
         .read()
         .then(({ value }) => {
           if (value) {
+            this.log.info(
+              Types.Emitter[Types.Emitter.ReadFromRadio],
+              `🔷 ${value}`,
+            );
             this.handleFromRadio(value);
           }
         })
@@ -201,7 +210,6 @@ export class ElectronSerialConnection extends MeshDevice {
     data: any,
     writer: WritableStreamDefaultWriter<Uint8Array> | undefined,
   ): Promise<void> {
-    this.log.info(Types.Emitter[Types.Emitter.Connect], `🔷 ${data}`);
     if (writer) {
       writer.write(data);
     } else {
