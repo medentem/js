@@ -116,6 +116,10 @@ export class ElectronSerialConnection extends MeshDevice {
           `🔷 Connected to ${path}`,
         );
 
+        this.configure().catch(() => {
+          // TODO: FIX, workaround for `wantConfigId` not getting acks.
+        });
+
         this.updateDeviceStatus(Types.DeviceStatusEnum.DeviceConnected);
       } else {
         this.log.error(

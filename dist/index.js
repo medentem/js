@@ -2339,6 +2339,8 @@ var ElectronSerialConnection = class extends MeshDevice {
           Emitter[20 /* Connect */],
           `\u{1F537} Connected to ${path}`
         );
+        this.configure().catch(() => {
+        });
         this.updateDeviceStatus(5 /* DeviceConnected */);
       } else {
         this.log.error(
