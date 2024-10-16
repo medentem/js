@@ -132,6 +132,10 @@ export class ElectronSerialConnection extends MeshDevice {
       this.complete();
     });
 
+    this.port.on("error", (err) => {
+      this.log.error(Types.Emitter[Types.Emitter.Connect], `❌ ${err.message}`);
+    });
+
     this.port.on("open", (err) => {
       if (err) {
         this.log.error(
