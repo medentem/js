@@ -77,12 +77,12 @@ export class ElectronSerialConnection extends MeshDevice {
       await this.port?.close();
     });
 
-    this.log.info(
-      Types.Emitter[Types.Emitter.ReadFromRadio],
-      `🔷 Readable? ${this.port?.readable}`,
-    );
-
     while (this.port?.readable && !this.preventLock) {
+      this.log.info(
+        Types.Emitter[Types.Emitter.ReadFromRadio],
+        "🔷 Reading...",
+      );
+
       await reader
         .read()
         .then(({ value }) => {
@@ -172,8 +172,8 @@ export class ElectronSerialConnection extends MeshDevice {
 
         parser.on("data", (data) => {
           this.processDataStream(data, writer);
+          this.readFromRadio(reader);
         });
-        this.readFromRadio(reader);
 
         this.log.info(
           Types.Emitter[Types.Emitter.Connect],

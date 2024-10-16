@@ -2284,11 +2284,11 @@ var ElectronSerialConnection = class extends MeshDevice {
       reader.releaseLock();
       await this.port?.close();
     });
-    this.log.info(
-      Emitter[22 /* ReadFromRadio */],
-      `\u{1F537} Readable? ${this.port?.readable}`
-    );
     while (this.port?.readable && !this.preventLock) {
+      this.log.info(
+        Emitter[22 /* ReadFromRadio */],
+        "\u{1F537} Reading..."
+      );
       await reader.read().then(({ value }) => {
         if (value) {
           this.log.info(
@@ -2358,8 +2358,8 @@ var ElectronSerialConnection = class extends MeshDevice {
         const reader = this.readerHack = this.transformer.readable.getReader();
         parser.on("data", (data) => {
           this.processDataStream(data, writer);
+          this.readFromRadio(reader);
         });
-        this.readFromRadio(reader);
         this.log.info(
           Emitter[20 /* Connect */],
           `\u{1F537} Connected to ${path}`
