@@ -1,5 +1,6 @@
 import type {
   BleConnection,
+  ElectronSerialConnection,
   HttpConnection,
   SerialConnection,
 } from "./adapters/index.ts";
@@ -143,7 +144,11 @@ export enum ChannelNumber {
   Admin = 7,
 }
 
-export type ConnectionType = BleConnection | HttpConnection | SerialConnection;
+export type ConnectionType =
+  | BleConnection
+  | HttpConnection
+  | SerialConnection
+  | ElectronSerialConnection;
 
 export type ConnectionTypeName = "ble" | "http" | "serial" | "electron-serial";
 

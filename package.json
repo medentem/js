@@ -37,7 +37,6 @@
     "@meshtastic/protobufs": "npm:@jsr/meshtastic__protobufs@^2.5.7",
     "crc": "^4.3.2",
     "serialport": "^12.0.0",
-    "@serialport/bindings-interface": "^1.2.2",
     "ste-simple-events": "^3.0.11",
     "tslog": "^4.9.3"
   },
@@ -48,6 +47,7 @@
     "@types/web-bluetooth": "^0.0.20",
     "tsup": "^8.3.0",
     "typedoc": "^0.26.8",
-    "typescript": "^5.6.2"
+    "typescript": "^5.6.2",
+    "@serialport/bindings-interface": "^1.2.2"
   }
 }

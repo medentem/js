@@ -3,7 +3,16 @@ import { MeshDevice } from "../meshDevice.ts";
 import * as Types from "../types.ts";
 import { transformHandler } from "../utils/index.ts";
 import { ByteLengthParser, SerialPort } from "serialport";
-import type { PortInfo } from "@serialport/bindings-interface";
+
+export interface PortInfo {
+  path: string;
+  manufacturer: string | undefined;
+  serialNumber: string | undefined;
+  pnpId: string | undefined;
+  locationId: string | undefined;
+  productId: string | undefined;
+  vendorId: string | undefined;
+}
 
 /** Allows to connect to a Meshtastic device over WebSerial */
 export class ElectronSerialConnection extends MeshDevice {

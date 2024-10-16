@@ -2,6 +2,7 @@ import {
   BleConnection,
   HttpConnection,
   SerialConnection,
+  ElectronSerialConnection,
 } from "./adapters/index.ts";
 import type * as Types from "./types.ts";
 
@@ -41,6 +42,17 @@ export class Client {
    */
   public createSerialConnection(configId?: number): SerialConnection {
     const serialConnection = new SerialConnection(configId);
+    this.deviceInterfaces.push(serialConnection);
+    return serialConnection;
+  }
+
+  /**
+   * Creates a new Electron Serial connection interface
+   */
+  public createElectronSerialConnection(
+    configId?: number,
+  ): ElectronSerialConnection {
+    const serialConnection = new ElectronSerialConnection(configId);
     this.deviceInterfaces.push(serialConnection);
     return serialConnection;
   }
