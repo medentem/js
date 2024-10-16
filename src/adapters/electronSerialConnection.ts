@@ -161,7 +161,17 @@ export class ElectronSerialConnection extends MeshDevice {
 
         this.readFromRadio(reader);
 
+        this.log.info(
+          Types.Emitter[Types.Emitter.Connect],
+          `🔷 Connected to ${path}`,
+        );
+
         this.updateDeviceStatus(Types.DeviceStatusEnum.DeviceConnected);
+      } else {
+        this.log.error(
+          Types.Emitter[Types.Emitter.Connect],
+          "❌ Serial port not readable.",
+        );
       }
     });
 
@@ -175,7 +185,15 @@ export class ElectronSerialConnection extends MeshDevice {
     data: any,
     writer: WritableStreamDefaultWriter<Uint8Array> | undefined,
   ): Promise<void> {
-    writer?.write(data);
+    this.log.info(Types.Emitter[Types.Emitter.Connect], `🔷 ${data}`);
+    if (writer) {
+      writer.write(data);
+    } else {
+      this.log.error(
+        Types.Emitter[Types.Emitter.Connect],
+        "❌ No writer available.",
+      );
+    }
   }
 
   /** Reconnects to the serial port */
