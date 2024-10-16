@@ -2326,6 +2326,9 @@ var ElectronSerialConnection = class extends MeshDevice {
       this.updateDeviceStatus(2 /* DeviceDisconnected */);
       this.complete();
     });
+    this.port.on("error", (err) => {
+      this.log.error(Emitter[20 /* Connect */], `\u274C ${err.message}`);
+    });
     this.port.on("open", (err) => {
       if (err) {
         this.log.error(
@@ -2348,14 +2351,43 @@ var ElectronSerialConnection = class extends MeshDevice {
           this.processDataStream(data, writer);
         });
         this.readFromRadio(reader);
+        this.log.info(
+          Emitter[20 /* Connect */],
+          `\u{1F537} Connected to ${path}`
+        );
         this.updateDeviceStatus(5 /* DeviceConnected */);
+      } else {
+        this.log.error(
+          Emitter[20 /* Connect */],
+          "\u274C Serial port not readable."
+        );
       }
     });
     this.preventLock = false;
-    await this.port.open();
+    this.port.open((err) => {
+      if (err) {
+        this.log.error(
+          Emitter[20 /* Connect */],
+          "\u274C Serial port failed to open."
+        );
+      } else {
+        this.log.info(
+          Emitter[20 /* Connect */],
+          `\u{1F537} Port open to ${path}`
+        );
+      }
+    });
   }
   async processDataStream(data, writer) {
-    writer?.write(data);
+    this.log.info(Emitter[20 /* Connect */], `\u{1F537} ${data}`);
+    if (writer) {
+      writer.write(data);
+    } else {
+      this.log.error(
+        Emitter[20 /* Connect */],
+        "\u274C No writer available."
+      );
+    }
   }
   /** Reconnects to the serial port */
   async reconnect() {
