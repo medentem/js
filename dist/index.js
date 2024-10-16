@@ -483,64 +483,74 @@ var Queue = class {
 
 // src/utils/packetExtractor.ts
 import * as Protobuf2 from "@meshtastic/protobufs";
-var extractPacket = (chunk, log, onDeviceDebugLog, concurrentLogOutput) => {
-  let byteBuffer = new Uint8Array([]);
-  byteBuffer = new Uint8Array([...byteBuffer, ...chunk]);
-  let processingExhausted = false;
-  while (byteBuffer.length !== 0 && !processingExhausted) {
-    const framingIndex = byteBuffer.findIndex((byte) => byte === 148);
-    const framingByte2 = byteBuffer[framingIndex + 1];
-    if (framingByte2 === 195) {
-      if (byteBuffer.subarray(0, framingIndex).length) {
-        if (concurrentLogOutput) {
-          onDeviceDebugLog.dispatch(byteBuffer.subarray(0, framingIndex));
-        } else {
-          log.warn(
-            2 /* SerialConnection */,
-            20 /* Connect */,
-            `\u26A0\uFE0F Found unneccesary message padding, removing: ${byteBuffer.subarray(0, framingIndex).toString()}`
-          );
+var PacketExtractor = class {
+  byteBuffer;
+  constructor() {
+    this.byteBuffer = new Uint8Array([]);
+  }
+  tryExtractPacket(chunk, log, onDeviceDebugLog, concurrentLogOutput) {
+    this.byteBuffer = new Uint8Array([...this.byteBuffer, ...chunk]);
+    let processingExhausted = false;
+    while (this.byteBuffer.length !== 0 && !processingExhausted) {
+      const framingIndex = this.byteBuffer.findIndex((byte) => byte === 148);
+      const framingByte2 = this.byteBuffer[framingIndex + 1];
+      if (framingByte2 === 195) {
+        if (this.byteBuffer.subarray(0, framingIndex).length) {
+          if (concurrentLogOutput) {
+            onDeviceDebugLog.dispatch(
+              this.byteBuffer.subarray(0, framingIndex)
+            );
+          } else {
+            log.warn(
+              2 /* SerialConnection */,
+              20 /* Connect */,
+              `\u26A0\uFE0F Found unneccesary message padding, removing: ${this.byteBuffer.subarray(0, framingIndex).toString()}`
+            );
+          }
+          this.byteBuffer = this.byteBuffer.subarray(framingIndex);
         }
-        byteBuffer = byteBuffer.subarray(framingIndex);
-      }
-      const msb = byteBuffer[2];
-      const lsb = byteBuffer[3];
-      if (msb !== void 0 && lsb !== void 0 && byteBuffer.length >= 4 + (msb << 8) + lsb) {
-        const packet = byteBuffer.subarray(4, 4 + (msb << 8) + lsb);
-        const malformedDetectorIndex = packet.findIndex(
-          (byte) => byte === 148
-        );
-        if (malformedDetectorIndex !== -1 && packet[malformedDetectorIndex + 1] === 195) {
-          log.warn(
-            2 /* SerialConnection */,
-            20 /* Connect */,
-            `\u26A0\uFE0F Malformed packet found, discarding: ${byteBuffer.subarray(0, malformedDetectorIndex - 1).toString()}`,
-            Protobuf2.Mesh.LogRecord_Level.WARNING
+        const msb = this.byteBuffer[2];
+        const lsb = this.byteBuffer[3];
+        if (msb !== void 0 && lsb !== void 0 && this.byteBuffer.length >= 4 + (msb << 8) + lsb) {
+          const packet = this.byteBuffer.subarray(4, 4 + (msb << 8) + lsb);
+          const malformedDetectorIndex = packet.findIndex(
+            (byte) => byte === 148
           );
-          byteBuffer = byteBuffer.subarray(malformedDetectorIndex);
+          if (malformedDetectorIndex !== -1 && packet[malformedDetectorIndex + 1] === 195) {
+            log.warn(
+              2 /* SerialConnection */,
+              20 /* Connect */,
+              `\u26A0\uFE0F Malformed packet found, discarding: ${this.byteBuffer.subarray(0, malformedDetectorIndex - 1).toString()}`,
+              Protobuf2.Mesh.LogRecord_Level.WARNING
+            );
+            this.byteBuffer = this.byteBuffer.subarray(malformedDetectorIndex);
+          } else {
+            this.byteBuffer = this.byteBuffer.subarray(
+              3 + (msb << 8) + lsb + 1
+            );
+            return packet;
+          }
         } else {
-          byteBuffer = byteBuffer.subarray(3 + (msb << 8) + lsb + 1);
-          return packet;
+          processingExhausted = true;
         }
       } else {
         processingExhausted = true;
       }
-    } else {
-      processingExhausted = true;
     }
+    return void 0;
   }
-  return void 0;
 };
 
 // src/utils/transformHandler.ts
 var transformHandler = (log, onReleaseEvent, onDeviceDebugLog, concurrentLogOutput) => {
+  const packetExtractor = new PacketExtractor();
   return new TransformStream({
     transform(chunk, controller) {
       log = log.getSubLogger({ name: "streamTransformer" });
       onReleaseEvent.subscribe(() => {
         controller.terminate();
       });
-      const packet = extractPacket(
+      const packet = packetExtractor.tryExtractPacket(
         chunk,
         log,
         onDeviceDebugLog,
@@ -2253,6 +2263,7 @@ var ElectronSerialConnection = class extends MeshDevice {
   /** Defines the connection type as serial */
   connType;
   portId;
+  packetExtractor;
   /** Serial port used to communicate with device. */
   port;
   constructor(configId) {
@@ -2261,6 +2272,7 @@ var ElectronSerialConnection = class extends MeshDevice {
     this.connType = "electron-serial";
     this.portId = "";
     this.port = void 0;
+    this.packetExtractor = new PacketExtractor();
     this.log.debug(
       Emitter[0 /* Constructor */],
       "\u{1F537} ElectronSerialConnection instantiated"
@@ -2320,7 +2332,7 @@ var ElectronSerialConnection = class extends MeshDevice {
             Emitter[22 /* ReadFromRadio */],
             `\u{1F537} Packet found ${data}`
           );
-          const packet = extractPacket(
+          const packet = this.packetExtractor.tryExtractPacket(
             data,
             this.log,
             this.events.onDeviceDebugLog,

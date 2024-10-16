@@ -1,7 +1,7 @@
 import { MeshDevice } from "../meshDevice.ts";
 import * as Types from "../types.ts";
 import { PacketLengthParser, SerialPort } from "serialport";
-import { extractPacket } from "../utils/packetExtractor.ts";
+import { PacketExtractor } from "../utils/packetExtractor.ts";
 
 export interface PortInfo {
   path: string;
@@ -20,6 +20,8 @@ export class ElectronSerialConnection extends MeshDevice {
 
   protected portId: string;
 
+  protected packetExtractor: PacketExtractor;
+
   /** Serial port used to communicate with device. */
   public port: SerialPort | undefined;
 
@@ -31,6 +33,7 @@ export class ElectronSerialConnection extends MeshDevice {
     this.connType = "electron-serial";
     this.portId = "";
     this.port = undefined;
+    this.packetExtractor = new PacketExtractor();
 
     this.log.debug(
       Types.Emitter[Types.Emitter.Constructor],
@@ -104,7 +107,7 @@ export class ElectronSerialConnection extends MeshDevice {
             Types.Emitter[Types.Emitter.ReadFromRadio],
             `🔷 Packet found ${data}`,
           );
-          const packet = extractPacket(
+          const packet = this.packetExtractor.tryExtractPacket(
             data,
             this.log,
             this.events.onDeviceDebugLog,

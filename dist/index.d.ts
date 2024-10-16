@@ -754,6 +754,12 @@ declare class SerialConnection extends MeshDevice {
     protected writeToRadio(data: Uint8Array): Promise<void>;
 }
 
+declare class PacketExtractor {
+    protected byteBuffer: Uint8Array;
+    constructor();
+    tryExtractPacket(chunk: Uint8Array, log: Logger<unknown>, onDeviceDebugLog: SimpleEventDispatcher<Uint8Array>, concurrentLogOutput: boolean): Uint8Array | undefined;
+}
+
 interface PortInfo {
     path: string;
     manufacturer: string | undefined;
@@ -768,6 +774,7 @@ declare class ElectronSerialConnection extends MeshDevice {
     /** Defines the connection type as serial */
     connType: ConnectionTypeName;
     protected portId: string;
+    protected packetExtractor: PacketExtractor;
     /** Serial port used to communicate with device. */
     port: SerialPort$1 | undefined;
     constructor(configId?: number);
