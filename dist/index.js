@@ -2345,6 +2345,7 @@ var ElectronSerialConnection = class extends MeshDevice {
         );
       }
     });
+    await this.disconnect();
     this.port.open((err) => {
       if (err) {
         this.log.error(
@@ -2368,7 +2369,11 @@ var ElectronSerialConnection = class extends MeshDevice {
   }
   /** Disconnects from the serial port */
   async disconnect() {
-    this.port?.close();
+    try {
+      this.port?.close();
+    } catch (err) {
+      console.log(err);
+    }
     this.updateDeviceStatus(2 /* DeviceDisconnected */);
     this.complete();
     return this.port;

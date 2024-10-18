@@ -125,6 +125,9 @@ export class ElectronSerialConnection extends MeshDevice {
       }
     });
 
+    // First make sure this port isn't actually already connected
+    await this.disconnect();
+
     /** Connect to device */
     this.port.open((err) => {
       if (err) {
@@ -151,8 +154,11 @@ export class ElectronSerialConnection extends MeshDevice {
 
   /** Disconnects from the serial port */
   public async disconnect(): Promise<SerialPort | undefined> {
-    // -------
-    this.port?.close();
+    try {
+      this.port?.close();
+    } catch (err) {
+      console.log(err);
+    }
     this.updateDeviceStatus(Types.DeviceStatusEnum.DeviceDisconnected);
     this.complete();
     // await this.onReleaseEvent.toPromise();
