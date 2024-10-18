@@ -21,7 +21,7 @@ declare enum DeviceStatusEnum {
     DeviceConfiguring = 6,
     DeviceConfigured = 7
 }
-type ConnectionParameters = HttpConnectionParameters | BleConnectionParameters | SerialConnectionParameters;
+type ConnectionParameters = HttpConnectionParameters | BleConnectionParameters | SerialConnectionParameters | ElectronSerialConnectionParameters;
 interface HttpConnectionParameters {
     /** Address The IP Address/Domain to connect to, without protocol */
     address: string;
@@ -583,6 +583,8 @@ declare abstract class MeshDevice {
     shutdown(time: number): Promise<number>;
     /** Reboots the current node after the specified amount of time has elapsed. */
     reboot(time: number): Promise<number>;
+    /** Enter DFU mode on the current node. */
+    enterDfuMode(): Promise<number>;
     /**
      * Reboots the current node into OTA mode after the specified amount of time
      * has elapsed.
