@@ -27,7 +27,8 @@ export enum DeviceStatusEnum {
 export type ConnectionParameters =
   | HttpConnectionParameters
   | BleConnectionParameters
-  | SerialConnectionParameters;
+  | SerialConnectionParameters
+  | ElectronSerialConnectionParameters;
 
 export interface HttpConnectionParameters {
   /** Address The IP Address/Domain to connect to, without protocol */

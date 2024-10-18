@@ -631,6 +631,27 @@ export abstract class MeshDevice {
     );
   }
 
+  /** Enter DFU mode on the current node. */
+  public async enterDfuMode(): Promise<number> {
+    this.log.debug(
+      Types.Emitter[Types.Emitter.EnterDfuMode],
+      "🔌 Entering DFU mode",
+    );
+
+    const dfu = create(Protobuf.Admin.AdminMessageSchema, {
+      payloadVariant: {
+        case: "enterDfuModeRequest",
+        value: true,
+      },
+    });
+
+    return await this.sendPacket(
+      toBinary(Protobuf.Admin.AdminMessageSchema, dfu),
+      Protobuf.Portnums.PortNum.ADMIN_APP,
+      "self",
+    );
+  }
+
   /**
    * Reboots the current node into OTA mode after the specified amount of time
    * has elapsed.
