@@ -1,9 +1,11 @@
 import { Logger } from "tslog";
-import { broadcastNum, minFwVer } from "./constants.ts";
+
+import { create, fromBinary, toBinary } from "@bufbuild/protobuf";
 import * as Protobuf from "@meshtastic/protobufs";
+
+import { broadcastNum, minFwVer } from "./constants.ts";
 import * as Types from "./types.ts";
 import { EventSystem, Queue, Xmodem } from "./utils/index.ts";
-import { create, fromBinary, toBinary } from "@bufbuild/protobuf";
 
 /** Base class for connection methods to extend */
 export abstract class MeshDevice {
@@ -341,6 +343,24 @@ export abstract class MeshDevice {
 
     return await this.sendPacket(
       toBinary(Protobuf.Admin.AdminMessageSchema, setChannelMessage),
+      Protobuf.Portnums.PortNum.ADMIN_APP,
+      "self",
+    );
+  }
+  public async enterDfuMode(): Promise<number> {
+    this.log.debug(
+      Types.Emitter[Types.Emitter.EnterDfuMode],
+      "🔌 Entering DFU mode",
+    );
+
+    const enterDfuModeRequest = create(Protobuf.Admin.AdminMessageSchema, {
+      payloadVariant: {
+        case: "enterDfuModeRequest",
+        value: true,
+      },
+    });
+    return await this.sendPacket(
+      toBinary(Protobuf.Admin.AdminMessageSchema, enterDfuModeRequest),
       Protobuf.Portnums.PortNum.ADMIN_APP,
       "self",
     );
@@ -730,6 +750,23 @@ export abstract class MeshDevice {
       payloadVariant: {
         case: "wantConfigId",
         value: this.configId,
+      },
+    });
+
+    return this.sendRaw(toBinary(Protobuf.Mesh.ToRadioSchema, toRadio));
+  }
+
+  /** Serial connection requires a heartbeat ping to stay connected, otherwise times out after 15 minutes */
+  public heartbeat(): Promise<number> {
+    this.log.debug(
+      Types.Emitter[Types.Emitter.Ping],
+      "❤️ Send heartbeat ping to radio",
+    );
+
+    const toRadio = create(Protobuf.Mesh.ToRadioSchema, {
+      payloadVariant: {
+        case: "heartbeat",
+        value: {},
       },
     });
 

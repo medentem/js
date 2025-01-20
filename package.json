@@ -1,6 +1,6 @@
 {
   "name": "@meshtastic/js",
-  "version": "2.5.5-0",
+  "version": "2.5.9-2",
   "description": "Browser library for interfacing with meshtastic devices",
   "license": "GPL-3.0-only",
   "scripts": {
@@ -33,8 +33,8 @@
     "url": "git+https://github.com/medentem/js.git"
   },
   "dependencies": {
-    "@bufbuild/protobuf": "^2.1.0",
-    "@meshtastic/protobufs": "npm:@jsr/meshtastic__protobufs@^2.5.7",
+    "@bufbuild/protobuf": "^2.2.1",
+    "@meshtastic/protobufs": "npm:@jsr/meshtastic__protobufs@^2.5.9",
     "crc": "^4.3.2",
     "serialport": "^12.0.0",
     "ste-simple-events": "^3.0.11",
